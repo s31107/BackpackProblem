@@ -3,6 +3,7 @@ class Item:
         self.weight = weight
         self.value = value
 
+
 class BackpackProblem:
     def __init__(self, k: int, n: int, items: list[Item]):
         self.k = k
@@ -12,28 +13,28 @@ class BackpackProblem:
     def generate_backpack(self) -> int:
         best_selection = (0, 0)
         for current in range(1, 2 ** self.n):
-            if not self._acceptability_test(current):
+            processed_items = self.process_items(current)
+            if processed_items is None:
                 continue
-            val = self.compute_value(current)
-            if best_selection[1] < val:
-                best_selection = (current, val)
-                print(f"Iteration {current}, best = {best_selection}, val = {val}")
+
+            if best_selection[1] < processed_items.value:
+                best_selection = (current, processed_items.value)
+                binary_items = bin(best_selection[0]).removeprefix("0b").zfill(self.n)
+                print(f"Iteration {current}, best = {binary_items}, val = {best_selection[1]}")
         return best_selection[0]
 
-    def compute_value(self, selected_items: int) -> int:
-        value_sum = 0
-        while selected_items != 0:
-            if selected_items % 2 == 1:
-                value_sum += self.items[selected_items.bit_length() - 1].value
-            selected_items >>= 1
-        return value_sum
+    def process_items(self, selected_items: int) -> Item | None:
+        items_sum = Item(0, 0)
 
-    def _acceptability_test(self, selected_items: int) -> bool:
-        selected_items_size = 0
-        while selected_items != 0:
-            if selected_items_size > self.k:
-                return False
+        for item_iter in range(self.n - 1, -1, -1):
+            if selected_items == 0:
+                break
+
             if selected_items % 2 == 1:
-                selected_items_size += self.items[selected_items.bit_length() - 1].weight
+                items_sum.value += self.items[item_iter].value
+                items_sum.weight += self.items[item_iter].weight
             selected_items >>= 1
-        return True
+
+            if items_sum.weight > self.k:
+                return None
+        return items_sum
